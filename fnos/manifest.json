@@ -1,0 +1,78 @@
+{
+  "id": "budcam",
+  "name": "BudCam",
+  "version": "0.1.0",
+  "description": "基于 ZLMediaKit、FastAPI、SQLite、Ant Design 和 Jessibuca 的 ONVIF/RTSP 摄像头监控与录像平台。",
+  "icon": "logo.png",
+  "type": "docker-compose",
+  "compose_file": "../docker-compose.yml",
+  "ports": [
+    {
+      "container": 9900,
+      "host": 9900,
+      "protocol": "tcp",
+      "description": "BudCam 前端"
+    },
+    {
+      "container": 9910,
+      "host": 9910,
+      "protocol": "tcp",
+      "description": "BudCam API"
+    },
+    {
+      "container": 9911,
+      "host": 9911,
+      "protocol": "tcp",
+      "description": "ZLMediaKit HTTP/WebSocket"
+    },
+    {
+      "container": 9554,
+      "host": 9554,
+      "protocol": "tcp",
+      "description": "ZLMediaKit RTSP"
+    },
+    {
+      "container": 9935,
+      "host": 9935,
+      "protocol": "tcp",
+      "description": "ZLMediaKit RTMP"
+    }
+  ],
+  "volumes": [
+    {
+      "host": "./data",
+      "container": "/app/data",
+      "description": "SQLite 数据库"
+    },
+    {
+      "host": "./record",
+      "container": "/record",
+      "description": "录像文件"
+    }
+  ],
+  "env": {
+    "PUBLIC_HOST": "127.0.0.1",
+    "FRONTEND_PORT": "9900",
+    "PYTHON_PORT": "9910",
+    "ZLM_HTTP_PORT": "9911",
+    "ZLM_RTSP_PORT": "9554",
+    "ZLM_RTMP_PORT": "9935",
+    "BUDCAM_SECRET_KEY": "please-change-this-secret",
+    "BUDCAM_TOKEN_EXPIRE_MINUTES": "120",
+    "RECORD_PATH": "./record",
+    "RECORD_RETENTION_DAYS": "0",
+    "ONVIF_SCAN_TARGETS": ""
+  },
+  "services": [
+    "budcam-api",
+    "budcam-web",
+    "zlmediakit"
+  ],
+  "features": [
+    "首次访问管理员初始化",
+    "用户登录与摄像头权限控制",
+    "ONVIF 局域网扫描与 RTSP 手动添加",
+    "1/4/6/9 分屏监控大屏",
+    "录像自动入库、按天清理和回放"
+  ]
+}
