@@ -23,8 +23,8 @@ function withToken(url: string) {
         `${currentProtocol}//${currentHost}/zlm$1`
       );
     }
-  if (!token) return url;
-  return `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
+  if (!token) return processedUrl;
+  return `${processedUrl}${processedUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
 }
 
 export function Dashboard({
