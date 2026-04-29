@@ -1,21 +1,19 @@
 services:
   budcam-api:
-    build:
-      context: ./backend
+    image: wizzer/budcam-api
     container_name: budcam-api
     restart: unless-stopped
     environment:
       BUDCAM_DATABASE_URL: sqlite:////app/data/budcam.db
-      BUDCAM_SECRET_KEY: ${BUDCAM_SECRET_KEY:-change-me-before-production}
       BUDCAM_TOKEN_EXPIRE_MINUTES: ${BUDCAM_TOKEN_EXPIRE_MINUTES:-120}
-      BUDCAM_ZLM_API_BASE: http://zlmediakit:9911
+      BUDCAM_ZLM_API_BASE: http://127.0.0.1:9911
       BUDCAM_ZLM_SECRET: budcam
       BUDCAM_PUBLIC_ZLM_HOST: ${PUBLIC_HOST:-127.0.0.1}
       BUDCAM_PUBLIC_ZLM_HTTP_PORT: ${ZLM_HTTP_PORT:-9911}
       BUDCAM_PUBLIC_ZLM_WS_PORT: ${ZLM_HTTP_PORT:-9911}
       BUDCAM_RECORDING_PATH: /record
       BUDCAM_RECORD_RETENTION_DAYS: ${RECORD_RETENTION_DAYS:-0}
-      BUDCAM_ONVIF_SCAN_TARGETS: ${ONVIF_SCAN_TARGETS:-}
+      BUDCAM_ONVIF_SCAN_TARGETS: ${ONVIF_SCAN_TARGETS:-192.168.1.0/24,192.168.2.0/24}
     volumes:
       - ./data:/app/data
       - ${RECORD_PATH:-./record}:/record
@@ -25,8 +23,7 @@ services:
       - zlmediakit
 
   budcam-web:
-    build:
-      context: ./frontend
+    image: wizzer/budcam-web
     container_name: budcam-web
     restart: unless-stopped
     ports:

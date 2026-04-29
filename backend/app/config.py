@@ -1,4 +1,3 @@
-import secrets
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -7,10 +6,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "BudCam"
     database_url: str = "sqlite:///./data/budcam.db"
-    secret_key: str = secrets.token_urlsafe(32)
+    secret_key: str = "budcam"
     token_expire_minutes: int = 120
     zlm_api_base: str = "http://127.0.0.1:9911"
-    zlm_secret: str = "budcam"
+    zlm_secret: str = "oXE6n4VX3aS7UBYvE7AV6kaPOJSPMjYc"
     public_zlm_host: str = "127.0.0.1"
     public_zlm_http_port: int = 9911
     public_zlm_ws_port: int = 9911

@@ -7,6 +7,22 @@ const splitCounts = [1, 4, 6, 9];
 
 function withToken(url: string) {
   const token = localStorage.getItem('budcam_token');
+  // 替换 ZLM 地址为代理地址
+    let processedUrl = url;
+
+    // 匹配 http://IP:PORT/live/ 或 http://127.0.0.1:9911/live/ 格式
+    const zlmPattern = /^https?:\/\/[^/]+\/live\//;
+    if (zlmPattern.test(processedUrl)) {
+      // 获取当前浏览器的协议、域名和端口
+      const currentProtocol = window.location.protocol;
+      const currentHost = window.location.host;
+
+      // 替换为代理路径
+      processedUrl = processedUrl.replace(
+        /^https?:\/\/[^/]+(\/live\/.*)$/,
+        `${currentProtocol}//${currentHost}/zlm$1`
+      );
+    }
   if (!token) return url;
   return `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
 }
