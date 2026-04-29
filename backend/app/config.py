@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     secret_key: str = "budcam"
     token_expire_minutes: int = 120
     zlm_api_base: str = "http://127.0.0.1:9911"
-    zlm_secret: str = "oXE6n4VX3aS7UBYvE7AV6kaPOJSPMjYc"
+    zlm_secret: str = ""
     public_zlm_host: str = "127.0.0.1"
     public_zlm_http_port: int = 9911
     public_zlm_ws_port: int = 9911

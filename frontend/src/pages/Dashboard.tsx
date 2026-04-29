@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Button, Empty, Grid, Radio, Space } from 'antd';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Empty, Grid, Radio } from 'antd';
 import { api, type Camera } from '../api/client';
 import { JessibucaPlayer } from '../components/JessibucaPlayer';
 
@@ -38,12 +38,52 @@ export function Dashboard({
   const isMobile = !screens.md;
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [split, setSplit] = useState(4);
+  const [tileOrder, setTileOrder] = useState<number[]>([]);
+  const dragIndexRef = useRef<number | null>(null);
 
   useEffect(() => {
     api.get('/cameras').then((res) => setCameras(res.data));
   }, []);
 
-  const shown = useMemo(() => cameras.filter((camera) => camera.enabled).slice(0, split), [cameras, split]);
+  // Sync tileOrder when cameras or split changes (preserves drag-arranged order)
+  useEffect(() => {
+    const enabledIds = cameras
+      .filter((c) => c.enabled)
+      .slice(0, split)
+      .map((c) => c.id);
+    setTileOrder((prev) => {
+      const existing = prev.filter((id) => enabledIds.includes(id));
+      const added = enabledIds.filter((id) => !prev.includes(id));
+      return [...existing, ...added];
+    });
+  }, [cameras, split]);
+
+  const shown = useMemo(
+    () => tileOrder.map((id) => cameras.find((c) => c.id === id)!).filter(Boolean),
+    [tileOrder, cameras],
+  );
+
+  const handleDragStart = useCallback((index: number) => {
+    dragIndexRef.current = index;
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const handleDrop = useCallback(
+    (targetIndex: number) => {
+      const sourceIndex = dragIndexRef.current;
+      if (sourceIndex === null || sourceIndex === targetIndex) return;
+      setTileOrder((prev) => {
+        const next = [...prev];
+        [next[sourceIndex], next[targetIndex]] = [next[targetIndex], next[sourceIndex]];
+        return next;
+      });
+      dragIndexRef.current = null;
+    },
+    [],
+  );
 
   return (
     <section className={`monitor-wall ${isMobile ? 'monitor-wall-mobile' : ''}`}>
@@ -69,14 +109,20 @@ export function Dashboard({
         <Empty description="暂无可播放摄像头" />
       ) : (
         <div className={`monitor-grid split-${split} ${isMobile ? 'split-mobile' : ''}`}>
-          {shown.map((camera) => (
-            <div key={camera.id} className="monitor-tile">
+          {shown.map((camera, index) => (
+            <div
+              key={camera.id}
+              className="monitor-tile"
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={handleDragOver}
+              onDrop={() => handleDrop(index)}
+            >
               <JessibucaPlayer title={camera.name} url={withToken(camera.flv_url)} />
             </div>
           ))}
         </div>
       )}
-      {cameras.length > split && <Space className="hint">仅显示前 {split} 路，请在摄像头管理中调整排序能力。</Space>}
     </section>
   );
 }
