@@ -12,7 +12,7 @@ set -euo pipefail
 
 # ── Config ──────────────────────────────────────────────
 DOCKER_USER="${DOCKER_USER:-}"   # Required: your Docker Hub username
-VERSION="${VERSION:-0.9.0}"
+VERSION="${VERSION:-1.1.0}"
 PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
 # ────────────────────────────────────────────────────────
 

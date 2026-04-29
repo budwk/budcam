@@ -60,6 +60,11 @@ class CameraUpdate(BaseModel):
     enabled: bool | None = None
 
 
+class CameraReorder(BaseModel):
+    """Batch reorder payload: list of camera IDs in desired order."""
+    ids: list[int]
+
+
 class CameraOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -71,6 +76,7 @@ class CameraOut(BaseModel):
     onvif_username: str | None
     stream_key: str
     enabled: bool
+    sort_order: int = 0
     created_at: datetime
     flv_url: str
     ws_flv_url: str

@@ -21,6 +21,7 @@ from .onvif import scan_onvif
 from .schemas import (
     CameraCreate,
     CameraOut,
+    CameraReorder,
     CameraUpdate,
     InitRequest,
     LoginRequest,
@@ -135,7 +136,7 @@ def create_app() -> FastAPI:
 
     @app.get("/api/cameras", response_model=list[CameraOut])
     def list_cameras(user: User = Depends(current_user), db: Session = Depends(get_db)) -> list[CameraOut]:
-        query = db.query(Camera).order_by(Camera.id)
+        query = db.query(Camera).order_by(Camera.sort_order, Camera.id)
         if not user.is_admin:
             query = query.join(Camera.users).filter(User.id == user.id)
         return [_camera_out(camera) for camera in query.all()]
@@ -144,10 +145,12 @@ def create_app() -> FastAPI:
     async def create_camera(payload: CameraCreate, _: User = Depends(admin_user), db: Session = Depends(get_db)) -> CameraOut:
         rtsp_url = _resolve_camera_rtsp_url(payload)
         stream_key = _stream_key(payload.name, rtsp_url)
+        max_order = db.query(Camera.sort_order).order_by(Camera.sort_order.desc()).first()
         camera = Camera(
             name=payload.name,
             rtsp_url=rtsp_url,
             source_type=payload.source_type,
+            sort_order=(max_order[0] + 1) if max_order else 0,
             onvif_xaddr=payload.onvif_xaddr,
             onvif_username=payload.onvif_username,
             onvif_password=payload.onvif_password,
@@ -161,6 +164,18 @@ def create_app() -> FastAPI:
         if settings.record_retention_days > 0:
             await _safe_start_record(camera)
         return _camera_out(camera)
+
+    @app.put("/api/cameras/reorder", response_model=list[CameraOut])
+    async def reorder_cameras(
+        payload: CameraReorder, _: User = Depends(admin_user), db: Session = Depends(get_db)
+    ) -> list[CameraOut]:
+        cameras = {c.id: c for c in db.query(Camera).filter(Camera.id.in_(payload.ids)).all()}
+        for order, cam_id in enumerate(payload.ids):
+            camera = cameras.get(cam_id)
+            if camera:
+                camera.sort_order = order
+        db.commit()
+        return [_camera_out(cameras[cam_id]) for cam_id in payload.ids if cam_id in cameras]
 
     @app.put("/api/cameras/{camera_id}", response_model=CameraOut)
     async def update_camera(camera_id: int, payload: CameraUpdate, _: User = Depends(admin_user), db: Session = Depends(get_db)) -> CameraOut:
@@ -316,6 +331,7 @@ def _camera_out(camera: Camera) -> CameraOut:
         onvif_username=camera.onvif_username,
         stream_key=camera.stream_key,
         enabled=camera.enabled,
+        sort_order=camera.sort_order,
         created_at=camera.created_at,
         flv_url=flv_url,
         ws_flv_url=ws_flv_url,
@@ -507,6 +523,8 @@ def _migrate_sqlite() -> None:
         alters.append("ALTER TABLE cameras ADD COLUMN onvif_password VARCHAR(128)")
     if "onvif_rtsp_path" not in columns:
         alters.append("ALTER TABLE cameras ADD COLUMN onvif_rtsp_path VARCHAR(256)")
+    if "sort_order" not in columns:
+        alters.append("ALTER TABLE cameras ADD COLUMN sort_order INTEGER DEFAULT 0")
     if not alters:
         return
     with engine.begin() as connection:

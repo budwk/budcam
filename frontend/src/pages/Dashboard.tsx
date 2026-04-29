@@ -78,6 +78,8 @@ export function Dashboard({
       setTileOrder((prev) => {
         const next = [...prev];
         [next[sourceIndex], next[targetIndex]] = [next[targetIndex], next[sourceIndex]];
+        // Persist the new order to the backend
+        api.put('/cameras/reorder', { ids: next }).catch(() => {});
         return next;
       });
       dragIndexRef.current = null;

@@ -40,6 +40,7 @@ class Camera(Base):
     onvif_rtsp_path: Mapped[str | None] = mapped_column(String(256), nullable=True)
     stream_key: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     users: Mapped[list[User]] = relationship(secondary=user_cameras, back_populates="cameras")
     recordings: Mapped[list["Recording"]] = relationship(back_populates="camera", cascade="all, delete-orphan")

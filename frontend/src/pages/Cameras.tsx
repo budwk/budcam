@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Button, Form, Input, Modal, Popconfirm, Space, Spin, Steps, Switch, Table, Tag, message } from 'antd';
 import { Grid } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons';
 import { api, type Camera, type OnvifDevice, type Recording } from '../api/client';
 import { JessibucaPlayer } from '../components/JessibucaPlayer';
 
@@ -145,6 +146,19 @@ export function Cameras({ isAdmin }: { isAdmin: boolean }) {
     }
   };
 
+  const moveCamera = async (cameraId: number, direction: 'up' | 'down') => {
+    setCameras((prev) => {
+      const idx = prev.findIndex((c) => c.id === cameraId);
+      if (idx === -1) return prev;
+      const target = direction === 'up' ? idx - 1 : idx + 1;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      api.put('/cameras/reorder', { ids: next.map((c) => c.id) }).catch(() => {});
+      return next;
+    });
+  };
+
   const openRecordings = async (camera: Camera) => {
     setRecordingCamera(camera);
     setRecordings([]);
@@ -163,6 +177,26 @@ export function Cameras({ isAdmin }: { isAdmin: boolean }) {
   };
 
   const columns: ColumnsType<Camera> = [
+    {
+      title: '排序',
+      width: 90,
+      render: (_, record, index) => (
+        <Space>
+          <Button
+            size="small"
+            icon={<ArrowUpOutlined />}
+            disabled={index === 0}
+            onClick={() => moveCamera(record.id, 'up')}
+          />
+          <Button
+            size="small"
+            icon={<ArrowDownOutlined />}
+            disabled={index === cameras.length - 1}
+            onClick={() => moveCamera(record.id, 'down')}
+          />
+        </Space>
+      ),
+    },
     { title: '名称', dataIndex: 'name' },
     { title: '来源', dataIndex: 'source_type', render: (v) => <Tag>{v.toUpperCase()}</Tag> },
     { title: 'RTSP', dataIndex: 'rtsp_url', ellipsis: true },
@@ -245,6 +279,20 @@ export function Cameras({ isAdmin }: { isAdmin: boolean }) {
                   <span className="entity-label">播放地址</span>
                   <span className="entity-value">{camera.flv_url}</span>
                 </div>
+              </div>
+              <div className="entity-actions" style={{ marginBottom: 8 }}>
+                <Button
+                  size="small"
+                  icon={<ArrowUpOutlined />}
+                  disabled={cameras.indexOf(camera) === 0}
+                  onClick={() => moveCamera(camera.id, 'up')}
+                />
+                <Button
+                  size="small"
+                  icon={<ArrowDownOutlined />}
+                  disabled={cameras.indexOf(camera) === cameras.length - 1}
+                  onClick={() => moveCamera(camera.id, 'down')}
+                />
               </div>
               {renderCameraActions(camera)}
             </article>
@@ -430,7 +478,8 @@ export function Cameras({ isAdmin }: { isAdmin: boolean }) {
           pagination={{ pageSize: 8 }}
           columns={[
             { title: '文件路径', dataIndex: 'file_path', ellipsis: true },
-            { title: '时间', dataIndex: 'start_time', render: (_, row) => formatBeijingTime(row.start_time || row.created_at) },
+            { title: '录制时间', dataIndex: 'start_time', render: (v) => formatBeijingTime(v) },
+            { title: '创建时间', dataIndex: 'created_at', render: (v) => formatBeijingTime(v) },
             { title: '时长', dataIndex: 'duration', render: (v) => `${v || 0}s` },
             { title: '大小', dataIndex: 'file_size', render: (v) => formatFileSize(v) },
             {
