@@ -45,22 +45,22 @@ export function Dashboard({
     api.get('/cameras').then((res) => setCameras(res.data));
   }, []);
 
-  // Sync tileOrder when cameras or split changes (preserves drag-arranged order)
+  // Sync tileOrder when cameras changes (preserves drag-arranged order)
+  // tileOrder tracks ALL enabled cameras; split only controls how many are rendered
   useEffect(() => {
     const enabledIds = cameras
       .filter((c) => c.enabled)
-      .slice(0, split)
       .map((c) => c.id);
     setTileOrder((prev) => {
       const existing = prev.filter((id) => enabledIds.includes(id));
       const added = enabledIds.filter((id) => !prev.includes(id));
       return [...existing, ...added];
     });
-  }, [cameras, split]);
+  }, [cameras]);
 
   const shown = useMemo(
-    () => tileOrder.map((id) => cameras.find((c) => c.id === id)!).filter(Boolean),
-    [tileOrder, cameras],
+    () => tileOrder.slice(0, split).map((id) => cameras.find((c) => c.id === id)!).filter(Boolean),
+    [tileOrder, cameras, split],
   );
 
   const handleDragStart = useCallback((index: number) => {
