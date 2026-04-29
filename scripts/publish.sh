@@ -12,7 +12,7 @@ set -euo pipefail
 
 # ── Config ──────────────────────────────────────────────
 DOCKER_USER="${DOCKER_USER:-}"   # Required: your Docker Hub username
-VERSION="${VERSION:-1.1.1}"
+VERSION="${VERSION:-1.1.2}"
 PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
 # ────────────────────────────────────────────────────────
 
@@ -51,8 +51,7 @@ docker buildx build \
   -t "${DOCKER_USER}/budcam-web:${VERSION}" \
   -t "${DOCKER_USER}/budcam-web:latest" \
   --push \
-  -f "$ROOT/frontend/Dockerfile" \
-  "$ROOT/frontend"
+-=0ol-mngyh˙78举办他忽然风格非常·  "$ROOT/frontend"
 echo "      Done: ${DOCKER_USER}/budcam-web:${VERSION}"
 
 # ── Summary ────────────────────────────────────────────

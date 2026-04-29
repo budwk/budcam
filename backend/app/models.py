@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,7 +22,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     cameras: Mapped[list["Camera"]] = relationship(secondary=user_cameras, back_populates="users")
 
 
@@ -41,7 +41,7 @@ class Camera(Base):
     stream_key: Mapped[str] = mapped_column(String(128), unique=True, index=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     users: Mapped[list[User]] = relationship(secondary=user_cameras, back_populates="cameras")
     recordings: Mapped[list["Recording"]] = relationship(back_populates="camera", cascade="all, delete-orphan")
 
@@ -57,5 +57,5 @@ class Recording(Base):
     file_size: Mapped[int] = mapped_column(Integer, default=0)
     start_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     duration: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     camera: Mapped[Camera] = relationship(back_populates="recordings")

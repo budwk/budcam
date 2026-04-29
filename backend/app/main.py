@@ -3,7 +3,7 @@ import hashlib
 import os
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 
@@ -35,7 +35,7 @@ from .schemas import (
 from .security import create_access_token, decode_token, hash_password, verify_password
 from .zlm import add_stream_proxy, del_stream_proxy, start_mp4_record, stream_urls
 
-LEGACY_ZLM_RECORDING_PATH = "/opt/media/bin/www/record"
+LEGACY_ZLM_RECORDING_PATH = "/record"
 
 
 def create_app() -> FastAPI:
@@ -440,14 +440,14 @@ def _parse_record_time(value) -> datetime | None:
     if value is None:
         return None
     if isinstance(value, (int, float)):
-        return datetime.fromtimestamp(value)
+        return datetime.fromtimestamp(value, tz=timezone.utc)
     if isinstance(value, str):
         stripped = value.strip()
         if stripped.isdigit():
-            return datetime.fromtimestamp(int(stripped))
+            return datetime.fromtimestamp(int(stripped), tz=timezone.utc)
         for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d_%H-%M-%S"):
             try:
-                return datetime.strptime(stripped, fmt)
+                return datetime.strptime(stripped, fmt).replace(tzinfo=timezone.utc)
             except ValueError:
                 pass
     return None
@@ -490,7 +490,7 @@ def _cleanup_loop() -> None:
 def _cleanup_expired_recordings() -> None:
     if settings.record_retention_days <= 0:
         return
-    cutoff = datetime.utcnow() - timedelta(days=settings.record_retention_days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=settings.record_retention_days)
     db = SessionLocal()
     try:
         expired = db.query(Recording).all()
