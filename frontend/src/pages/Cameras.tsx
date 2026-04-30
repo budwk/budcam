@@ -509,16 +509,36 @@ export function Cameras({ isAdmin }: { isAdmin: boolean }) {
 
 function formatBeijingTime(dt: string) {
   if (!dt) return '-';
-  return new Date(dt).toLocaleString('zh-CN', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
+
+  // 1. 确保 UTC 标识
+  let dateStr = dt;
+  if (!dateStr.includes('Z') && !dateStr.includes('+')) {
+    dateStr += 'Z';
+  }
+
+  const date = new Date(dateStr);
+
+  // 2. 检查日期是否合法
+  if (isNaN(date.getTime())) {
+    console.error("Invalid Date String:", dt);
+    return '-';
+  }
+
+  try {
+    return date.toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).replace(/\//g, '-'); // 将 2026/04/30 替换为 2026-04-30
+  } catch (e) {
+    // 兜底方案：如果 timeZone 报错
+    return date.toISOString();
+  }
 }
 
 function formatFileSize(size: number) {

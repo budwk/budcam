@@ -35,7 +35,7 @@ from .schemas import (
 from .security import create_access_token, decode_token, hash_password, verify_password
 from .zlm import add_stream_proxy, del_stream_proxy, start_mp4_record, stream_urls
 
-LEGACY_ZLM_RECORDING_PATH = "/record"
+LEGACY_ZLM_RECORDING_PATH = "/opt/media/bin/www/record"
 
 
 def create_app() -> FastAPI:
