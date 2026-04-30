@@ -486,25 +486,33 @@ def _cleanup_loop() -> None:
         time.sleep(max(1, (next_run - now).total_seconds()))
         _cleanup_expired_recordings()
 
-
 def _cleanup_expired_recordings() -> None:
     if settings.record_retention_days <= 0:
         return
+
     cutoff = datetime.now(timezone.utc) - timedelta(days=settings.record_retention_days)
     db = SessionLocal()
     try:
-        expired = db.query(Recording).all()
-        for recording in expired:
-            record_time = recording.start_time or recording.created_at
-            if record_time >= cutoff:
-                continue
-            for path in _candidate_record_paths(recording.file_path):
-                try:
-                    path.unlink(missing_ok=True)
-                except OSError:
-                    pass
-            db.delete(recording)
-        db.commit()
+        # 【关键优化】直接在数据库层面过滤过期记录
+        # 假设 start_time 是带时区的偏移量，或者确保时区一致
+        expired_query = db.query(Recording).filter(Recording.start_time < cutoff)
+
+        # 分批处理，防止一次性加载过多记录导致内存/CPU 飙升
+        while True:
+            batch = expired_query.limit(100).all()
+            if not batch:
+                break
+
+            for recording in batch:
+                # 文件 IO 仍然是重头戏，加个小异常处理
+                for path in _candidate_record_paths(recording.file_path):
+                    try:
+                        path.unlink(missing_ok=True)
+                    except OSError:
+                        continue
+                db.delete(recording)
+
+            db.commit() # 每处理完一批提交一次，释放锁定
     finally:
         db.close()
 
